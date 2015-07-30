@@ -4,14 +4,17 @@ Created on Sep 19, 2013
 
 @author: MantYdze
 @email mantas.stankevicius@cern.ch
-'''
 
+Last modification May 14, 2015
+(see git repo for history of modification and blaming)
+'''
 
 from Note import Note
 from Author import Author
 
 from BeautifulSoup import BeautifulSoup
 import re, json
+import time
 
 delim = " | "
 
@@ -37,7 +40,7 @@ def person_info(html):
     
     fullname = person[0].strip()
     institute = person[1].replace(")","").strip()
-        
+    
     country = getCountry(institute)
     
     return Author(fullname, country, institute)
@@ -46,14 +49,14 @@ def note_info(html):
     note_soup = BeautifulSoup(html)
     code = note_soup.find("a").renderContents()
     code=code.strip()
-    return Note("CMS AN-" + code, getSubmitterInfo(code))
+    return Note("CMS " + code, getSubmitterInfo(code))
 
 def getSubmitterInfo(code):
     for tr in annotes:
         tds = tr.findAll("td")
-        if tds[0].renderContents() == "CMS AN-"+code:
-                # Submitter | Country | Institute             
-            return Author(tds[5].renderContents().split("(")[0].strip(), tds[3].renderContents().strip(), tds[4].renderContents().strip()) 
+        if tds[0].renderContents() == "CMS "+code:
+                # Submitter | Country | Institute
+            return Author(tds[4].renderContents().split("(")[0].strip(), tds[2].renderContents().strip(), tds[3].renderContents().strip())
         
 def appendAuthor(target, author):
     if (author != None):
@@ -85,12 +88,11 @@ annotes_soup = BeautifulSoup(annotesHTML)
 annotes = annotes_soup.findAll("tr",{ "class" : re.compile(r"^(odd|even)$") })
 f.close()
 
-f = open("data/analysies.html", "r");
+f = open("data/analyses.html", "r");
 analysisListHTML = f.read()
 f.close()
 
-out = open("sheets/sheet1.csv", "w")
-
+out = open("sheets/sheet1test.csv", "w")
 
 header = "Code | Status | Name | Date | CADI Contact | CADI Contact Institute | CADI Contact Country | ARC Chair | ARC Chair Institute | ARC Chair Country"
 for i in range(1, MAX_NUM_OF_ARC+1):
@@ -129,7 +131,7 @@ for tr in trs:
         #TITLE
         analysis_url = tds[0].find("a")["href"]
         
-        #DATE    
+        #DATE
         date = tds[2].renderContents()
         
         #STATUS
@@ -140,70 +142,82 @@ for tr in trs:
         if (arc_members_raw != "no ARC"):
             arc_members_raw = "einam ieskot memberiu"
         
-        
         parts = analysis_url.split("&")
-        id = parts[2].replace("value=","")
-
+        id = parts[3].replace("ancode=","")
+        
         # GET FROM LOCAL
-        inp = open("data/analysies/id_"+id+".html", "r")
+        inp = open("data/analyses/id_"+id+".html", "r")
+        print id
         try:
             analysisHTML = unicode(inp.read())
         except:
             analysisHTML = inp.read()
         inp.close()
 
+        if ( len(analysisHTML) == 0 ):
+            print "Check "+id
+            inp = open("data/analyses/id_"+id+".html", "r")
+            analysisHTML = inp.read()
+
         analysisSoup = BeautifulSoup(analysisHTML)
         atrs = analysisSoup.findAll("tr")
         
+        #Analysis CODE
+        analysis_code = id
+        
         for atr in atrs:
             atds = atr.findAll("td")
-            
-            #Analysis name
-            if (atds[0].renderContents().strip() == "Analysis Name:"):
-                analysis_name = atds[1].renderContents()
-                
-            #Analysis CODE
-            if (atds[0].renderContents().strip() == "Code:"):
-                analysis_code = atds[1].renderContents()
+            for i in range(len(atds)):
+#                print atds[i].renderContents().strip()
+#                time.sleep(5.5)    # pause 5.5 seconds
 
-	    #Status
-            if (atds[0].renderContents().strip() == "Status:"):
-                status = atds[1].renderContents().replace("&nbsp;", " ")
+                #Analysis name
+                if (atds[i].renderContents().strip() == "<b>Name\n</b>"):
+                    analysis_name_soup = BeautifulSoup(atds[i+1].renderContents())
+                    analysis_name = analysis_name_soup.renderContents()
+
+
+                #Status
+                if (atds[i].renderContents().strip() == "<b>Status</b>"):
+                    status_soup = BeautifulSoup(atds[i+1].renderContents())
+                    status = status_soup.find("b").renderContents()
+                    status = status.strip()
+
+                #CADI CONTACT
+                if (atds[i].renderContents().strip() == "<b>Contact Person\n</b>"):
+                    contact_a = atds[i+1].find("a")
+                    if (contact_a != None):
+                        cadi_contact = person_info(atds[i+1].renderContents())
             
-            #CADI CONTACT
-            if (atds[0].renderContents().strip() == "Contact:"):
-                contact_a = atds[1].find("a")
-                if (contact_a != None):
-                    cadi_contact = person_info(atds[1].renderContents())
-            
-            # ARC_MEMBERS
-            if (atds[0].renderContents().strip() == "ARC:"):
-                arc = atds[1].renderContents().strip()
-                if arc != "":
-                    arc_member_list = arc.split(",")
-                    
-                    for arc_mem in arc_member_list:
-                        if (arc_mem.find("Chairperson") != -1):
-                            chairperson = person_info(arc_mem)
-                            if (chairperson.country.strip() == "USA"):
-                                arc_members_usa +=1
-                        else:
-                            member = person_info(arc_mem) 
-                            if (member.country.strip() == "USA"):
-                                arc_members_usa +=1
-                            arc_members.append(member)
-                    
-            # NOTES
-            if (atds[0].renderContents().strip() == "notes:"):
-                notes_raw = atds[1].renderContents().strip()
-                if notes_raw != "":
-                    notes_list = notes_raw.split(",")
-                    
-                    for note in notes_list:
-                        note = note_info(note) 
-                        if (note.submitter.country.strip() == "USA"):
-                            notes_usa +=1
-                        notes.append(note)
+                # ARC_MEMBERS
+                if (atds[i].renderContents().strip() == "<b>ARC</b>"):
+                    arc = atds[i+1].renderContents()
+                    if atds[i+1].renderContents().strip() != "No ARC yet":
+                        arctrs = atds[i+1].findAll("tr")
+                        for arctr in arctrs:
+                            arctds = arctr.findAll("td")
+                            if (len(arctds) == 4):
+                                if (arctds[2].renderContents() == "Chair"):
+                                    chairperson = person_info(arctds[0].renderContents())
+                                    if (chairperson.country.strip() == "USA"):
+                                        arc_members_usa +=1
+                                else:
+                                    member = person_info(arctds[0].renderContents())
+                                    if (member.country.strip() == "USA"):
+                                        arc_members_usa +=1
+                                    arc_members.append(member)
+
+                # NOTES
+                if (atds[i].renderContents().strip() == "<b>Related CMS Notes</b>"):
+                    notes_raw = atds[i+1].renderContents().replace("&nbsp;", "")
+                    if notes_raw != "":
+                        notes_list = notes_raw.split("|")
+                        for note in notes_list:
+                            if (note != '\r\nnone\n'):
+                                theNote = note_info(note)
+                                if (theNote.submitter.country.strip() == "USA"):
+                                    notes_usa +=1
+                                notes.append(theNote)
 
 #        creating line info'
         output_line = []
@@ -271,7 +285,7 @@ for tr in trs:
             json_arc_member = {}
             json_arc_member["country"] = arc_member.country
             json_arc_member["institute"] = arc_member.institute
-            json_arc_members[arc_member.fullname] = json_arc_member 
+            json_arc_members[arc_member.fullname] = json_arc_member
             
         output_data["arc_members"] = json_arc_members
         output_data["arc_members_num"] = len(json_arc_members)
@@ -302,3 +316,4 @@ json_o.close()
 out.close()
 
 print "Done"
+
