@@ -7,6 +7,7 @@ Created on Oct 10, 2013
 
 from BeautifulSoup import BeautifulSoup                                             
 import csv, os, re, copy, json
+import time
 
 countries = ["Armenia", "Austria", "Belarus", "Belgium",
              "Brazil", "Bulgaria", "China", "Colombia",
@@ -196,6 +197,21 @@ def match(names):
     IDs = []   # row numbers
     for i in names:
         i = i.lower()
+        # Orduna: remove spaces at the beginning of the string
+        # they mess up the look up of names
+        while i[0] == ' ':
+            i = i[1:]
+        # Orduna: construct a simplified version of the name to help with
+        # cases like:
+        #    Name in AN: Matthew Rosenfield
+        #    Name in author pages: Matt Rosenfield
+        simplifiedName=0
+        if i.count(' ') == 1:
+            theNames=i.split(' ')
+            theSimplifiedName = theNames[0][0]+". "+theNames[1]
+            simplifiedName=1
+
+        nameFound = 0
         counter = 0
         for j in parsedMemberInfo:
             firstName = j[1].lower()
@@ -215,24 +231,36 @@ def match(names):
 
             if c0 == i:
                 IDs.append(counter)
+                nameFound = nameFound + 1
                 break
             elif c3 == i:
                 IDs.append(counter)
+                nameFound = nameFound + 1
                 break
             elif c4 and c4 == i:
                 IDs.append(counter)
+                nameFound = nameFound + 1
                 break
             elif c2 == i:
                 IDs.append(counter)
+                nameFound = nameFound + 1
                 break
             elif c1 == i:
                 IDs.append(counter)
+                nameFound = nameFound + 1
                 break
+            if nameFound == 0 and simplifiedName == 1:
+                if c3 == theSimplifiedName:
+                    IDs.append(counter)
+                    nameFound = nameFound + 1
+                    print "NOTE: "+i+" was identified as "+firstName+' '+lastName+" by using the simplified name: "+theSimplifiedName
             counter = counter + 1
+        if (nameFound == 0):
+            print i+" not found"
     return IDs
 
 def createCSV():
-    csvfile         = open('sheets/sheet2.csv', 'wb')
+    csvfile         = open('sheets/sheet2test.csv', 'wb')
     json_data       = {}
     writer          = csv.writer(csvfile, delimiter='|', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['', "CMSNoteID", "Title", "submitDate", "Country",
