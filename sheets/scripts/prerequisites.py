@@ -4,10 +4,14 @@ Created on Oct 10, 2013
 @author: mantas.stankevicius@cern.ch
 @author: ali.mehmet.altundag@cern.ch
 
+Last modification May 14, 2015
+(see git repo for history of modification and blaming)
 '''
 
-from BeautifulSoup import BeautifulSoup                                             
+from BeautifulSoup import BeautifulSoup
 import cookielib, urllib, urllib2, getpass, os, re
+
+import time
 
 # Source: http://stackoverflow.com/questions/13925983/login-to-website-using-urllib2-python-2-7
 
@@ -19,26 +23,26 @@ class Login:
         # Store the cookies and create an opener that will hold them
         self.cj = cookielib.CookieJar()
         self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
-
+        
         # Add our headers
         self.opener.addheaders = [('User-agent', 'RedditTesting')]
-
+        
         # Install our opener (note that this changes the global opener to the one
         # we just made, but you can also just call opener.open() if you want)
         urllib2.install_opener(self.opener)
-
+        
         # Input parameters we are going to send
         payload = {
-            'username':None,
-            'password':None,
+            'username':'None',
+            'password':'None',
             'login':'login'
             }
         
         print "Please enter your login and password"
-
+        
         if not payload['username']:
             payload['username'] = raw_input("Username:")
-
+        
         if not payload["password"]:
             payload["password"] = getpass.getpass()
 
@@ -54,44 +58,61 @@ class Login:
         self.contents = resp.read()
     def getPage(self, url):
         return urllib2.urlopen(url).read()
-
+    
     def getLoginResponse(self):
         return self.contents
 
-def fetchAnalysies():
-    print "Fetching takes a while because CADI is slow. You have to wait about 10 mins. Time to take a break :)"
-    print "Fetching list of analysies..."
+def fetchAnalyses():
+    print "Getting the list of analyses takes just a few seconds..."
     
-    data = handle.getPage('http://cms.cern.ch/iCMS/analysisadmin/analysismanagement?ALL=true')
-    f = open("data/analysies.html", "w")
+#    This is the global page, by default it will show the first 1,000 records. In our case, with more than
+#    1,000 records, we need to access in a different way. Next lines will show how that is done.
+#    data = handle.getPage('http://cms.cern.ch/iCMS/analysisadmin/cadilines?awg=any')
+
+#    This is the way I think we can approach it, p=1, p=2, ..., p=n; will have set's of up to one thousand
+#    records. As of May '15 we have ~1,400, so we would need just p=1 and p=2. It will be maybe a long time
+#    before we actually need to go above p=2.
+    data1 = handle.getPage('http://cms.cern.ch/iCMS/jsp/analysis/admin/cadilines.jsp?d-446288-p=1&awg=any')
+    data2 = handle.getPage('http://cms.cern.ch/iCMS/jsp/analysis/admin/cadilines.jsp?d-446288-p=2&awg=any')
+    
+    data = data1 + data2
+    f = open("data/analyses.html", "w")
     f.write(data)
     f.close()
     
-    print "Done"
+    print "Got list of analyses.\n"
     
-    # creating analysies folder where all fetched analysies will be stored
-    if not os.path.exists("data/analysies"):
-        os.makedirs("data/analysies")
+    # creating analyses folder where all fetched analyses will be stored
+    if not os.path.exists("data/analyses"):
+        os.makedirs("data/analyses")
     
-    print "Downloading analysies... "
-    
+    print "Retrieving the page for each analysis.\n"
+
     soup = BeautifulSoup(data)
     trs = soup.findAll("tr",{ "class" : re.compile(r"^(odd|even)$") })
-    
+    print "Retrieving an individual HTML file takes 0.5 sec,"
+    print "but there are {0} of them, so a rough estimation".format( len(trs) )
+    print "of {0:.2f} min (give or take) for this step (with".format( len(trs)*0.5/60.)
+    print "progress report every 200 analyses).\n"
+
+    index=1
     for tr in trs:
         if len(tr.findAll("td")) > 2:
             tds = tr.findAll("td")
             analysis_url = tds[0].find("a")["href"]
-            
+
             parts = analysis_url.split("&")
-            id = parts[2].replace("value=","")
+            firstPart = parts[0].split("?")
+            id = firstPart[1].replace("line=","")
             #download analysis details page
-            analysisHTML = handle.getPage("http://cms.cern.ch"+analysis_url)
-            
-            o = open("data/analysies/id_"+id+".html", "w")
+            analysisHTML = handle.getPage("http://cms.cern.ch/iCMS/analysisadmin/getan?code="+id)
+            o = open("data/analyses/id_"+id+".html", "w")
             o.write(analysisHTML)
             o.close()
-            
+            if index%200 == 0:
+                print "{0} pages retrieved. The last page was for the {1} analysis.".format( index, id )
+            index += 1
+
     print "Done"
     
 def fetchANotes():
@@ -152,14 +173,17 @@ print "Checking for prerequisites"
 
 if not os.path.exists("data"):
     os.makedirs("data")
-    
+
 if not os.path.exists("sheets"):
     os.makedirs("sheets")
 
-if not os.path.isfile("data/analysies.html"):
+if not os.path.isfile("data/analyses.html"):
     handle = Login()
-    fetchAnalysies()
-    
+    fetchAnalyses()
+
+#print "waiting 100s"
+#time.sleep(100)
+
 if not os.path.isfile("data/annotes.html"):
     if handle == None:
         handle = Login()
@@ -167,11 +191,11 @@ if not os.path.isfile("data/annotes.html"):
 
 if not os.path.exists("data/authors"):
     os.makedirs("data/authors")
-    
+
 # ---------------------------------- #
 if not os.path.exists("data/detail_pages"):
     os.makedirs("data/detail_pages")
-    
+
 fetchAuthors()
 
 def parseANotes():
