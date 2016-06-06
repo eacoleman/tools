@@ -9,6 +9,8 @@ import json
 
 LPC = ["BAYLOR-UNIV", "BOSTON-UNIV", "BROWN-UNIV", "CARNEGIE-MELLON", "CHICAGO", "COLORADO", "CORNELL", "FERMILAB", "FLORIDA-FIU", "FLORIDA-STATE", "FLORIDA-TECH", "IOWA", "KANSAS-STATE", "KANSAS-UNIV", "LIVERMORE", "MINNESOTA", "MISSISSIPPI", "NEBRASKA", "NOTRE_DAME", "PUERTO_RICO", "PURDUE", "PURDUE-CALUMET", "ROCKEFELLER", "RUTGERS", "SUNY-BUFFALO", "TENNESSEE", "TEXAS-TAMU", "TEXAS-TECH", "VIRGINIA-UNIV"]
 
+#LPC = []
+
 analysies_json = ""
 annotes_json = ""
 usa_lpc_authors = {}
@@ -23,10 +25,9 @@ def isInLPC(institute):
     return False
 
 def load_usa_lpc_authors_csv():
-    f = open('data/LPCauthors-08April2014_fromLPCsurvey_mod.csv', 'r')
+    f = open('data/LPCauthors.csv', 'r')
     lines = f.read().split("\n")
     for line in lines[1:]:
-#        print line
         columns = line.split("|")
         if len(columns) > 6:
             fname = columns[4].replace("\"", "").replace("'", "")
@@ -34,13 +35,12 @@ def load_usa_lpc_authors_csv():
             
             isLPC = False
             for i in range(5,7):  #lpc-fellows = 5, lpc-all = 6
-                if columns[i]:
+                if columns[i].replace("\"", "") == '1':
                     isLPC = True
                     break
             
             usa_lpc_authors[fname + " " + name] = isLPC
             usa_lpc_authors[name + " " + fname] = isLPC
-
 
 json_file = open('data/sheet1.json', 'r')
 analysies_json = json.load(json_file)
@@ -50,11 +50,8 @@ annotes_json = json.load(json_file)
 
 load_usa_lpc_authors_csv()
 
-    
-
 analysis_codes = analysies_json.keys()
 analysis_codes.sort()
-
 
 # TOTALS
 arc_chair_from_USA_total = 0
@@ -111,7 +108,6 @@ for analysis_code in analysis_codes:
     ### ARC chairperson
     chairperson = analysis["chairperson"]
     if len(chairperson.keys()) > 0:
-        
         # arc_chair_from_USA
         if chairperson["country"] == "USA":
             arc_chair_from_USA = 1
