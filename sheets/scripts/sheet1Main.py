@@ -35,7 +35,15 @@ def getCountry(institute_required):
 
 def person_info(html):
     person_soup = BeautifulSoup(html)
+    if person_soup.find("a") == None:
+        # To deal with ARC chair fields with no people info in them, for example: B2G-12-018
+        print "No person"
+        return Author("", "", "")
     person_raw = person_soup.find("a").renderContents()
+    if (person_raw == ""):
+        # No person case
+        print "No person"
+        return Author("", "", "")
     person = person_raw.split("(")
     
     fullname = person[0].strip()
@@ -57,6 +65,8 @@ def getSubmitterInfo(code):
         if tds[0].renderContents() == "CMS "+code:
                 # Submitter | Country | Institute
             return Author(tds[4].renderContents().split("(")[0].strip(), tds[2].renderContents().strip(), tds[3].renderContents().strip())
+    print "\tunknown:", code
+    return Author("", "", "")
         
 def appendAuthor(target, author):
     if (author != None):
@@ -92,7 +102,7 @@ f = open("data/analyses.html", "r");
 analysisListHTML = f.read()
 f.close()
 
-out = open("sheets/sheet1test.csv", "w")
+out = open("sheets/sheet1.csv", "w")
 
 header = "Code | Status | Name | Date | CADI Contact | CADI Contact Institute | CADI Contact Country | ARC Chair | ARC Chair Institute | ARC Chair Country"
 for i in range(1, MAX_NUM_OF_ARC+1):
@@ -169,43 +179,44 @@ for tr in trs:
             atds = atr.findAll("td")
             for i in range(len(atds)):
 #                print atds[i].renderContents().strip()
-#                time.sleep(5.5)    # pause 5.5 seconds
+#                time.sleep(1)    # pause 5 seconds
 
-                #Analysis name
+                # Analysis name
                 if (atds[i].renderContents().strip() == "<b>Name\n</b>"):
                     analysis_name_soup = BeautifulSoup(atds[i+1].renderContents())
                     analysis_name = analysis_name_soup.renderContents()
 
-
-                #Status
+                # Status
                 if (atds[i].renderContents().strip() == "<b>Status</b>"):
                     status_soup = BeautifulSoup(atds[i+1].renderContents())
                     status = status_soup.find("b").renderContents()
                     status = status.strip()
 
-                #CADI CONTACT
+                # CADI CONTACT
                 if (atds[i].renderContents().strip() == "<b>Contact Person\n</b>"):
                     contact_a = atds[i+1].find("a")
                     if (contact_a != None):
                         cadi_contact = person_info(atds[i+1].renderContents())
             
-                # ARC_MEMBERS
+                # ARC CHAIR
+                if (atds[i].renderContents().strip() == "<b>ARC Chair</b>"):
+                    arc = atds[i+1].renderContents()
+                    if atds[i+1].renderContents().strip() != "NO CHAIR":
+                        chairperson = person_info(atds[i+1].renderContents())
+        
+                # ARC MEMBERS (including chair)
                 if (atds[i].renderContents().strip() == "<b>ARC</b>"):
                     arc = atds[i+1].renderContents()
                     if atds[i+1].renderContents().strip() != "No ARC yet":
                         arctrs = atds[i+1].findAll("tr")
                         for arctr in arctrs:
                             arctds = arctr.findAll("td")
-                            if (len(arctds) == 4):
-                                if (arctds[2].renderContents() == "Chair"):
-                                    chairperson = person_info(arctds[0].renderContents())
-                                    if (chairperson.country.strip() == "USA"):
-                                        arc_members_usa +=1
-                                else:
-                                    member = person_info(arctds[0].renderContents())
-                                    if (member.country.strip() == "USA"):
-                                        arc_members_usa +=1
-                                    arc_members.append(member)
+                            if (len(arctds) == 1):
+                                member = person_info(arctds[0].renderContents())
+                                
+                                if (member.country.strip() == "USA"):
+                                    arc_members_usa +=1
+                                arc_members.append(member)
 
                 # NOTES
                 if (atds[i].renderContents().strip() == "<b>Related CMS Notes</b>"):
@@ -236,7 +247,7 @@ for tr in trs:
         for i in range(len(arc_members)+1, MAX_NUM_OF_ARC+1):               # fill empty columns
             output_line = appendAuthor(output_line, None)
                 
-        output_line.append(len(arc_member_list).__str__())                  # number of ARC MEMBERS
+        output_line.append(len(arc_members).__str__())                      # number of ARC MEMBERS
         output_line.append(arc_members_usa.__str__())                       # number of ARC MEMBERS from USA
         
         for note in notes:
@@ -316,4 +327,3 @@ json_o.close()
 out.close()
 
 print "Done"
-
