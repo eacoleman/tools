@@ -193,7 +193,10 @@ def parseName(authors):
         if not blackList(name) and name.count(' ') > 0:  names.append(name)
     return names
 
-def match(names):
+def openInSafariFromFile(fileName):
+    os.system("open data/detail_pages/%s.html" % fileName.replace('/', '_').replace(' ', '\ '))
+
+def match(names, theAN):
     IDs = []   # row numbers
     for i in names:
         i = i.lower()
@@ -256,11 +259,13 @@ def match(names):
                     print "NOTE: "+i+" was identified as "+firstName+' '+lastName+" by using the simplified name: "+theSimplifiedName
             counter = counter + 1
         if (nameFound == 0):
-            print i+" not found"
+            #openInSafariFromFile(theAN)
+            print theAN+": "+i+" not found"
+
     return IDs
 
 def createCSV():
-    csvfile         = open('sheets/sheet2test.csv', 'wb')
+    csvfile         = open('sheets/sheet2.csv', 'wb')
     json_data       = {}
     writer          = csv.writer(csvfile, delimiter='|', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     writer.writerow(['', "CMSNoteID", "Title", "submitDate", "Country",
@@ -275,7 +280,7 @@ def createCSV():
         authorCount = int(i[6])
 
         authors     = parseName(getNameFromFile(i[0]))
-        matchResult = match(authors)
+        matchResult = match(authors, i[0])
 
         if authors: somofFound = len(authors)
         else: somofFound = 0
