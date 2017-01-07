@@ -22,7 +22,90 @@ unsigned int theIndex = 1; // Orduna
 std::ofstream theTableHTML("table.html");
 
 TCanvas* canv ;
-static const char category[4][20] ={"Inactive", "Published", "Pas only Pub", "Active"};
+static const char category[4][20] ={"Inactive", "Published", "PAS-Only PUB", "Active"};
+
+void categories3bin(std::map<TString,int> map40,
+                    std::map<TString,int> map50,
+                    std::map<TString,int> map80)
+{
+    TCanvas* canv2 ;
+    Int_t colors[] = {9, kPink+7, kOrange+8, kBlue+1, kGreen+2, kRed+1};
+    
+    canv2 = new TCanvas("canv", "canv", 800, 600);
+    gStyle->SetOptStat(0);
+    char hname[50];
+    vector<TH1F*> cat;
+    for (int i = 0; i < 4; ++i) {
+        sprintf(hname, "cat%i", i);
+        cat.push_back(new TH1F(hname, hname, 10, 0, 10));
+    }
+    cat[0]->GetXaxis()->SetBinLabel(1, "B2G");
+    cat[0]->GetXaxis()->SetBinLabel(2, "BPH");
+    cat[0]->GetXaxis()->SetBinLabel(3, "EXO");
+    cat[0]->GetXaxis()->SetBinLabel(4, "FSQ");
+    cat[0]->GetXaxis()->SetBinLabel(5, "FTR");
+    cat[0]->GetXaxis()->SetBinLabel(6, "HIG");
+    cat[0]->GetXaxis()->SetBinLabel(7, "HIN");
+    cat[0]->GetXaxis()->SetBinLabel(8, "SMP");
+    cat[0]->GetXaxis()->SetBinLabel(9, "SUS");
+    cat[0]->GetXaxis()->SetBinLabel(10,"TOP");
+    cat[0]->SetTitle("");
+
+    std::map<TString,int> mapPAGnames;
+    mapPAGnames["B2G"]=1;
+    mapPAGnames["BPH"]=2;
+    mapPAGnames["EXO"]=3;
+    mapPAGnames["FSQ"]=4;
+    mapPAGnames["FTR"]=5;
+    mapPAGnames["HIG"]=6;
+    mapPAGnames["HIN"]=7;
+    mapPAGnames["SMP"]=8;
+    mapPAGnames["SUS"]=9;
+    mapPAGnames["TOP"]=10;
+
+    
+    // >80%  LPC
+    for(const auto &it : map80) {
+        cat[0]->SetBinContent(mapPAGnames[it.first],it.second);
+    }
+    
+    // Majority LPC (defined as above 50%)
+    for(const auto &it : map50) {
+        cat[1]->SetBinContent(mapPAGnames[it.first],it.second);
+    }
+    
+    // >40% LPC
+    for(const auto &it : map40) {
+        cat[2]->SetBinContent(mapPAGnames[it.first],it.second);
+    }
+
+    float max=0;
+    for (int i=0;i<4;++i){
+        cat[i]->SetBarOffset(0.15+0.25*i);
+        cat[i]->SetBarWidth(0.2);
+        cat[i]->SetFillColor(colors[i+1]);
+    }
+    
+    cat[0]->SetMinimum(0);
+    cat[0]->SetMaximum(cat[2]->GetMaximum()*1.25);
+    cat[0]->GetYaxis()->SetTitle("Number of CADI entries");
+    TH1 *h1 = cat[0]->DrawCopy("bar5");
+    TH1 *h2 = cat[1]->DrawCopy("bar5,same");
+    TH1 *h3 = cat[2]->DrawCopy("bar5,same");
+    TLegend *legend = new TLegend(0.15,0.75,0.55,0.89);
+    legend->SetFillColor(10);
+    legend->SetTextSize(0.03);
+    legend->SetTextFont(42);
+    legend->SetBorderSize(0);
+    legend->SetFillStyle(0);
+    legend->SetLineStyle(0);
+    legend->AddEntry(h1,"Papers where 80\% US authors are from LPC","f");
+    legend->AddEntry(h2,"Papers where 50\% US authors are from LPC","f");
+    legend->AddEntry(h3,"Papers where 40\% US authors are from LPC","f");
+    legend->Draw();
+    canv2->SaveAs("LPCmany3bin.png");
+    canv2->SaveAs("LPCmany3bin.C");
+}
 
 std::string trim(const std::string& str, const std::string& whitespace = " \t")
 {
@@ -96,12 +179,29 @@ public:
         int n = 0;
         code = row[n++];
         status = row[n++];
-        arcChairUSA = row.integer(n++); arcChairLPC = row.integer(n++); arcChairLPCnew = row.integer(n++);
-        cadiUSA = row.integer(n++); cadiLPC = row.integer(n++); cadiLPCnew = row.integer(n++);
-        arc = row.integer(n++); arcUSA = row.integer(n++); arcLPC = row.integer(n++); arcLPCnew = row.integer(n++);
-        anSub = row.integer(n++); anSubUSA = row.integer(n++); anSubLPC = row.integer(n++); anSubLPCnew = row.integer(n++);
-        anAuth = row.integer(n++); anAuthUSA = row.integer(n++); anAuthLPC = row.integer(n++);anAuthLPCnew = row.integer(n++);
-        inst = row.integer(n++); instUSA = row.integer(n++); instLPC = row.integer(n++); instLPCnew = row.integer(n++);
+        samples = row[n++];
+        arcChairUSA = row.integer(n++); 
+        arcChairLPC = row.integer(n++); 
+        arcChairLPCnew = row.integer(n++);
+        cadiUSA = row.integer(n++); 
+        cadiLPC = row.integer(n++); 
+        cadiLPCnew = row.integer(n++);
+        arc = row.integer(n++); 
+        arcUSA = row.integer(n++); 
+        arcLPC = row.integer(n++); 
+        arcLPCnew = row.integer(n++);
+        anSub = row.integer(n++); 
+        anSubUSA = row.integer(n++); 
+        anSubLPC = row.integer(n++);
+        anSubLPCnew = row.integer(n++);
+        anAuth = row.integer(n++); 
+        anAuthUSA = row.integer(n++); 
+        anAuthLPC = row.integer(n++);
+        anAuthLPCnew = row.integer(n++);
+        inst = row.integer(n++); 
+        instUSA = row.integer(n++); 
+        instLPC = row.integer(n++); 
+        instLPCnew = row.integer(n++);
         n=0;
         //       code2 = row2[n++]; notes = row2[n++];
         //       auth = row2.integer(n++); authUSA = row2.integer(n++);
@@ -133,6 +233,10 @@ public:
     
     bool category(const string & c) {
         return c == code.substr(0, 3);
+    }
+    
+    TString getsamples() {
+        return TString(samples);
     }
     
     int year() {
@@ -249,18 +353,26 @@ public:
             (status.compare(0, 3,  "PUB") == 0) ||
             (status.compare(0, 11, "ReadyForSub") == 0) ||
             (status.compare(0, 11, "RefComments") == 0) ||
+            (status.compare(0, 11, "ReSubmitted") == 0) ||
             (status.compare(0, 5,  "ReSub") == 0) ||
             (status.compare(0, 3,  "SUB") == 0)
             ) return 1;
+
+        // pas-only pub
         if (status.compare(0, 12, "PAS-only-PUB") == 0) return 2;
+
+        // active
         if (status.compare(0, 9, "PUB-Draft") == 0) return 3;
+
+        // inactive
         if ((status.compare(0,4,"Free")==0) || (status.compare(0,7,"Planned")==0) || (status.compare(0,7,"Started")==0) ||
             (status.compare(0,3,"AWG")==0) || (status.compare(0,10,"SUPERSEDED")==0) || (status.compare(0,15,"Thesis-Approved")==0) ||
             (status.compare(0,9,"Completed")==0) || (status.compare(0,8,"Inactive")==0)) return 0;
+        
         return 3;
     }
 public:
-    string code, status;
+    string code, status, samples;
     int arcChairUSA, arcChairLPC, cadiUSA, cadiLPC, arc, arcUSA, arcLPC,
     anSub, anSubUSA, anSubLPC, anAuth, anAuthUSA, anAuthLPC,
     inst, instUSA, instLPC, anSubLPCnew, anAuthLPCnew;
@@ -274,6 +386,9 @@ public:
 };
 
 vector<string> groups, PAG;
+std::map<TString,int> PAGcounts40;
+std::map<TString,int> PAGcounts50;
+std::map<TString,int> PAGcounts80;
 
 TH1F* prepareHisto(string a, const vector<string> & list = PAG)
 {
@@ -301,7 +416,7 @@ TH2F* prepareHisto2D(string a, const vector<string> & list = PAG)
     // all->SetNdivisions(26);
 }
 
-THStack* stack(TH2* histo, string nameOfFile, bool print=false)
+THStack* tstack(TH2* histo, string nameOfFile, bool print=false)
 {
     std::string name = "";
     histo->LabelsDeflate("X");
@@ -332,7 +447,7 @@ THStack* stack(TH2* histo, string nameOfFile, bool print=false)
     }
 
     
-    TLegend * leg = new TLegend(0.7, 0.8, 0.88, 0.94, "","brNDC");
+    TLegend * leg = new TLegend(0.6, 0.725, 0.88, 0.875, "","brNDC");
     leg->SetFillColor(10);
     leg->SetTextSize(0.03);
     leg->SetTextFont(42);
@@ -340,12 +455,13 @@ THStack* stack(TH2* histo, string nameOfFile, bool print=false)
     leg->SetFillStyle(0);
     leg->SetLineStyle(0);
     leg->AddEntry(pub, "Published", "f");
-    leg->AddEntry(pas, "PAS-only- PUB", "f");
+    leg->AddEntry(pas, "PAS-Only Pub", "f");
     leg->AddEntry(act, "Active", "f");
     mystack->Draw();
     leg->Draw();
+    mystack->GetXaxis()->SetRangeUser(0,PAG.size());
     mystack->GetYaxis()->SetTitle("Number of CADI entries");
-    mystack->GetYaxis()->SetTitleOffset(1.1) ;
+    mystack->GetYaxis()->SetTitleOffset(1.15) ;
     canv->SaveAs((nameOfFile+".png").c_str());
     canv->SaveAs((nameOfFile+".C").c_str());
     return mystack;
@@ -487,7 +603,7 @@ THStack* combine(TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, string name
 }
 
 
-THStack* stack(int bin, TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, string nameOfFile, string auth, string yAxis="", bool print=false)
+THStack* tstack(int bin, TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, string nameOfFile, string auth, string yAxis="", bool print=false)
 {
     std::string name = "";
     
@@ -528,13 +644,14 @@ THStack* stack(int bin, TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, stri
     
     
     mystack->Draw();
+    mystack->GetXaxis()->SetRangeUser(0,PAG.size());
     mystack->GetYaxis()->SetTitle(yAxis.c_str());
-    mystack->GetYaxis()->SetTitleOffset(1.1) ;
+    mystack->GetYaxis()->SetTitleOffset(1.15) ;
     mystack->SetMaximum(mystack->GetMaximum()*1.25);
     
     TLegend * leg;
     //if (max<60)
-    leg = new TLegend(0.15, 0.85, 0.4, 0.94, "","brNDC");
+    leg = new TLegend(0.15, 0.775, 0.4, 0.875, "","brNDC");
     //else leg = new TLegend(0.45, 0.85, 0.8, 0.94, "","brNDC");
     leg->SetFillColor(10);
     leg->SetTextSize(0.03);
@@ -558,8 +675,8 @@ THStack* stack(int bin, TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, stri
     TLatex* text1 = new TLatex(3.570061,23.08044,category[bin-1]);
     text1->SetNDC();
     text1->SetTextAlign(13);
-    text1->SetX(0.17);
-    text1->SetY(0.989);
+    text1->SetX(0.13);
+    text1->SetY(0.95);
     text1->SetTextFont(42);
     text1->SetTextSizePixels(24);
     text1->Draw();
@@ -578,14 +695,15 @@ THStack* stack(int bin, TH2* histo, TH2F* US, TH2F* US_LPC, TH2F* US_nonLP, stri
     mystack2->Add(us);
     
     mystack2->Draw();
+    mystack2->GetXaxis()->SetRangeUser(0,PAG.size());
     mystack2->GetYaxis()->SetTitle(yAxis.c_str());
-    mystack2->GetYaxis()->SetTitleOffset(1.1) ;
+    mystack2->GetYaxis()->SetTitleOffset(1.15) ;
     mystack2->SetMaximum(mystack2->GetMaximum()*1.15);
     
     //   TLegend * leg;
     delete leg;
     //if (max<60)
-    leg = new TLegend(0.15, 0.85, 0.4, 0.94, "","brNDC");
+    leg = new TLegend(0.15, 0.775, 0.4, 0.875, "","brNDC");
     //else leg = new TLegend(0.45, 0.85, 0.8, 0.94, "","brNDC");
     leg->SetFillColor(10);
     leg->SetTextSize(0.03);
@@ -652,6 +770,7 @@ void analyse()
     groups.push_back("TRG");
     groups.push_back("TRK");
     
+    PAG=std::vector<string>(0);
     PAG.push_back("B2G"); // CERN plots: b2gs = [ B2G ]
     PAG.push_back("BPH"); // CERN plots: bphs = [ BPH ]
     //   PAG.push_back("DIF");
@@ -667,6 +786,12 @@ void analyse()
     PAG.push_back("SUS"); // CERN plots: suss = [ SUS ]
     PAG.push_back("TOP"); // CERN plots: tops = [ TOP ]
     
+    for(size_t i=0; i < PAG.size(); i++) {
+        PAGcounts40[PAG.at(i).c_str()]=0;
+        PAGcounts50[PAG.at(i).c_str()]=0;
+        PAGcounts80[PAG.at(i).c_str()]=0;
+    }
+
     vector<CadiEntry> entries;
     
     std::ifstream  file("sheet5.csv");
@@ -860,7 +985,11 @@ void analyse()
 //        if (entries[j].year() < 12 || entries[j].year() > 14) continue ;
         
         // 2015 and after
-        if (entries[j].year() < 15) continue ;
+        // if (entries[j].year() < 15) continue ;
+        
+        // Select run
+        if (entries[j].getsamples() == "Run1") continue;
+        //if (entries[j].getsamples() == "Run2") continue;
         
         // Select only PAGs
         if (find(PAG.begin(),PAG.end(),entries[j].category().c_str())==PAG.end()) continue;
@@ -942,7 +1071,7 @@ void analyse()
             if (entries[j].isCadiUS_nonLPC()) contactnonLPC2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
             if (entries[j].isCadiUS_LPCnew()) contactLPCnew2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
             if (entries[j].isCadiUS_nonLPCnew()) contactnonLPCnew2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
-            //if (entries[j].category("TOP") && entries[j].activity()==1) { (entries[j].anAuth==entries[j].anAuthUSA)
+            //if (entries[j].category("TOP") && entries[j].activity()==1) (entries[j].anAuth==entries[j].anAuthUSA)
             //entries[j].majorityUS_LPCnew()
             // if ((entries[j].anAuth>=0)&& (entries[j].isUS_LPCnew())&& (entries[j].activity()==1)&& (entries[j].year()>11)){
             
@@ -966,19 +1095,29 @@ void analyse()
             double theRatio = -1.0;
             if (entries[j].anAuth > 0 && entries[j].anAuthUSA > 0 && entries[j].activity() == 1) {
                 theRatio = (float)entries[j].anAuthLPCnew / entries[j].anAuthUSA ;
+                double theOtherRatio = (float)entries[j].anAuthUSA/entries[j].anAuth;
                 if (theRatio > 0.4) {
                     count40++;
                     std::cout << "THE40 " << entries[j].code << std::endl;
-                        std::cout << "Fractions: " << entries[j].code << '\t' << ((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) << '\t' << ((float)entries[j].anAuthUSA/entries[j].anAuth) <<std::endl;
+                        std::cout << "Fractions: " << entries[j].code 
+                                  << '\t' 
+                                  << ((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) 
+                                  << '\t'
+                                  << ((float)entries[j].anAuthUSA/entries[j].anAuth) 
+                                  << std::endl;
                     if (theRatio > 0.5) {
                         count50++;
                         std::cout << "THE50 " << entries[j].code << std::endl;
                         if (theRatio > 0.8) {
                             count80++;
                             std::cout << "THE80 " << entries[j].code << std::endl;
-                        }
+                        } 
                     }
                 }
+
+                if(theRatio>0.4 && theOtherRatio>0.4) PAGcounts40[entries[j].category().c_str()]+=1;
+                if(theRatio>0.5 && theOtherRatio>0.5) PAGcounts50[entries[j].category().c_str()]+=1;
+                if(theRatio>0.8 && theOtherRatio>0.8) PAGcounts80[entries[j].category().c_str()]+=1;
             }
             
             //            if (entries[j].anAuth > 0 && (((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) > 0.4) && entries[j].activity() == 1) {++count40;}
@@ -1008,23 +1147,11 @@ void analyse()
                 entries[j].anAuth > 1 &&
                 entries[j].anAuthUSA > 0 &&
                 entries[j].activity() == 1 &&
-                (
-                 (
-                  (((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) >= 0.6) &&
-                  (((float)entries[j].anAuthUSA/entries[j].anAuth) >= 0.6)
-                  )
-                 ||
-                 (
-                  (
-                   (
-                    (float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) > 0.6) &&
-                  (((float)entries[j].anAuthUSA/entries[j].anAuth) > 0.6)
+                ((((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) >= 0.6) &&
+                  (((float)entries[j].anAuthUSA/entries[j].anAuth) >= 0.6)))
 //                  &&
 //                  (((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) < 0.8) &&
 //                  (((float)entries[j].anAuthUSA/entries[j].anAuth) < 0.6)
-                  )
-                 )
-                )
                 // This is the selection for the categories3bin.C plot, the second bin, called " >80& LPC"
                 // if (entries[j].anAuth>0&& (((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA)>0.8) && entries[j].activity()==1)
                 // // This is the selection for the categories3bin.C plot, the third bin, called " >40& LPC"
@@ -1037,6 +1164,7 @@ void analyse()
                 ++arcCh;
                 arcChUSA += entries[j].arcChairUSA;
                 arcChLPC += entries[j].arcChairLPCnew;
+                std::cout << "\t\t\t --- NUMBERS for CAT3:\t";// EAC 
                 std::cout << theIndex << '\t'; theIndex++; // Orduna
                 std::cout << entries[j].code
                 //                << '\t' << entries[j].status
@@ -1055,6 +1183,7 @@ void analyse()
                 << '\t' << entries[j].arcUSA
                 << '\t' << entries[j].arcLPCnew << std::endl;
                 ++count;
+                //PAGcounts[entries[j].category().c_str()]++;
             }
             
             
@@ -1086,7 +1215,10 @@ void analyse()
             totArcCM2D         ->Fill(entries[j].category().c_str(), entries[j].activity(), entries[j].arc+1);
             totArcCMUS2D       ->Fill(entries[j].category().c_str(), entries[j].activity(), entries[j].arcUSA+entries[j].arcChairUSA);
             totArcCMLPCnew2D   ->Fill(entries[j].category().c_str(), entries[j].activity(), entries[j].arcLPCnew+entries[j].arcChairLPCnew);
-            totArcCMnonLPCnew2D->Fill(entries[j].category().c_str(), entries[j].activity(), entries[j].arcUSA+entries[j].arcChairUSA-entries[j].arcLPCnew-entries[j].arcChairLPCnew);
+            totArcCMnonLPCnew2D->Fill(entries[j].category().c_str(), entries[j].activity(), entries[j].arcUSA
+                                                                                            +entries[j].arcChairUSA
+                                                                                            -entries[j].arcLPCnew
+                                                                                            -entries[j].arcChairLPCnew);
         }
         
         if (entries[j].activity() == 1) {
@@ -1129,73 +1261,85 @@ void analyse()
     std::cout << "Count 40: "   << count40 ;
     std::cout << "\tCount 50: " << count50 ;
     std::cout << "\tCount 80: " << count80 << std::endl;
+    std::cout << "\t\t\t PAG COUNTS: 40 " << std::endl;
+    for(const auto &it : PAGcounts40) { 
+        std::cout<<"\t\t\t\t- "<<it.first<<": "<<it.second<<std::endl;
+    }
+    std::cout << "\t\t\t PAG COUNTS: 50 " << std::endl;
+    for(const auto &it : PAGcounts50) { 
+        std::cout<<"\t\t\t\t- "<<it.first<<": "<<it.second<<std::endl;
+    }
+    std::cout << "\t\t\t PAG COUNTS: 80 " << std::endl;
+    for(const auto &it : PAGcounts80) { 
+        std::cout<<"\t\t\t\t- "<<it.first<<": "<<it.second<<std::endl;
+    }
     
     // return;
     
     //   active2D
     //   THStack* allSt = stack(active2D, "allStack");
     
-    stack(activeMany2D, "CADIentriesMany", true);
-    stack(active2D, "CADIentries");
+    tstack(activeMany2D, "CADIentriesMany", true);
+    tstack(active2D, "CADIentries");
     
-    stack(4, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authActive",    "With Authors", "CADI entries");
-    stack(2, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authPublished", "With Authors", "CADI entries");
-    stack(3, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authPasOnly",   "With Authors", "CADI entries");
+    tstack(4, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authActive",    "With Authors", "CADI entries");
+    tstack(2, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authPublished", "With Authors", "CADI entries");
+    tstack(3, activeMany2D, withUSauthors2D, withUS_LPCauthors2D, withUS_nonLPCauthors2D, "authPasOnly",   "With Authors", "CADI entries");
     
-    stack(4, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authActiveNew",    "With Authors", "CADI entries", true);
-    stack(2, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authPublishedNew", "With Authors", "CADI entries", true);
-    stack(3, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authPasOnlyNew",   "With Authors", "CADI entries");
+    tstack(4, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authActiveNew",    "With Authors", "CADI entries", true);
+    tstack(2, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authPublishedNew", "With Authors", "CADI entries", true);
+    tstack(3, activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "authPasOnlyNew",   "With Authors", "CADI entries");
     combine(activeMany2D, withUSauthors2D, withUS_LPCnewauthors2D, withUS_nonLPCnewauthors2D, "auth_Active-PasOnly-Published_New", "With Authors", "CADI entries");
     
-    stack(4, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthActive",    "Majority of authors","CADI entries");
-    stack(2, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthPublished", "Majority of authors","CADI entries");
-    stack(3, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthPasOnly",   "Majority of authors","CADI entries");
+    tstack(4, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthActive",    "Majority of authors","CADI entries");
+    tstack(2, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthPublished", "Majority of authors","CADI entries");
+    tstack(3, activeMany2D, majUSauthors2D, majUS_LPCauthors2D, majUS_nonLPCauthors2D, "majAuthPasOnly",   "Majority of authors","CADI entries");
     
-    stack(4, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthActiveNew",    "Majority of authors","CADI entries");
-    stack(2, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthPublishedNew", "Majority of authors","CADI entries");
-    stack(3, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthPasOnlyNew",   "Majority of authors","CADI entries");
+    tstack(4, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthActiveNew",    "Majority of authors","CADI entries");
+    tstack(2, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthPublishedNew", "Majority of authors","CADI entries");
+    tstack(3, activeMany2D, majUSauthors2D, majUS_LPCnewauthors2D, majUS_nonLPCnewauthors2D, "majAuthPasOnlyNew",   "Majority of authors","CADI entries");
     //     std::cout << "active2D "<<active2D[j]->GetEntries()<<endl;
     
-    stack(4, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairActive", "ARC chairs","CADI entries");
-    stack(2, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairPublished", "ARC chairs","CADI entries");
-    stack(3, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairPasOnly", "ARC chairs","CADI entries");
+    tstack(4, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairActive", "ARC chairs","CADI entries");
+    tstack(2, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairPublished", "ARC chairs","CADI entries");
+    tstack(3, active2D, chairUS2D ,chairLPC2D, chairnonLPC2D, "arcChairPasOnly", "ARC chairs","CADI entries");
     
     
-    stack(4, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberActive", "With ARC members","CADI entries");
-    stack(2, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberPublished", "With ARC members","CADI entries");
-    stack(3, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberPasOnly", "With ARC members","CADI entries");
+    tstack(4, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberActive", "With ARC members","CADI entries");
+    tstack(2, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberPublished", "With ARC members","CADI entries");
+    tstack(3, active2D, arcUS2D ,arcLPC2D, arcnonLPC2D, "arcMemberPasOnly", "With ARC members","CADI entries");
     
-    stack(4, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairActiveNew", "ARC chairs","CADI entries", true);
-    stack(2, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairPublishedNew", "ARC chairs","CADI entries", true);
-    stack(3, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairPasOnlyNew", "ARC chairs","CADI entries");
+    tstack(4, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairActiveNew", "ARC chairs","CADI entries", true);
+    tstack(2, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairPublishedNew", "ARC chairs","CADI entries", true);
+    tstack(3, active2D, chairUS2D ,chairLPCnew2D, chairnonLPCnew2D, "arcChairPasOnlyNew", "ARC chairs","CADI entries");
     
-    stack(4, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberActiveNew", "With ARC members","CADI entries");
-    stack(2, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberPublishedNew", "With ARC members","CADI entries");
-    stack(3, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberPasOnlyNew", "With ARC members","CADI entries");
+    tstack(4, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberActiveNew", "With ARC members","CADI entries");
+    tstack(2, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberPublishedNew", "With ARC members","CADI entries");
+    tstack(3, active2D, arcUS2D ,arcLPCnew2D, arcnonLPCnew2D, "arcMemberPasOnlyNew", "With ARC members","CADI entries");
     
-    stack(4, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairActiveNew", "With ARC members","CADI entries", true);
-    stack(2, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairPublishedNew", "With ARC members","CADI entries", true);
-    stack(3, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairPasOnlyNew", "With ARC members","CADI entries");
+    tstack(4, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairActiveNew", "With ARC members","CADI entries", true);
+    tstack(2, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairPublishedNew", "With ARC members","CADI entries", true);
+    tstack(3, active2D, arcCMUS2D ,arcCMLPCnew2D, arcCMnonLPCnew2D, "arcMemberChairPasOnlyNew", "With ARC members","CADI entries");
     
-    stack(4, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactActive", "CADI contacts","CADI entries");
-    stack(2, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactPublished", "CADI contacts","CADI entries");
-    stack(3, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactPasOnly", "CADI contacts","CADI entries");
+    tstack(4, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactActive", "CADI contacts","CADI entries");
+    tstack(2, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactPublished", "CADI contacts","CADI entries");
+    tstack(3, active2D, contactUS2D , contactLPC2D, contactnonLPC2D, "cadiContactPasOnly", "CADI contacts","CADI entries");
     
-    stack(4, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactActiveNew", "CADI contacts","CADI entries", true);
-    stack(2, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactPublishedNew", "CADI contacts","CADI entries", true);
-    stack(3, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactPasOnlyNew", "CADI contacts","CADI entries");
+    tstack(4, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactActiveNew", "CADI contacts","CADI entries", true);
+    tstack(2, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactPublishedNew", "CADI contacts","CADI entries", true);
+    tstack(3, active2D, contactUS2D , contactLPCnew2D, contactnonLPCnew2D, "cadiContactPasOnlyNew", "CADI contacts","CADI entries");
     
-    stack(4, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcActive", "Total ARC members", "ARC members");
-    stack(2, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcPublished", "Total ARC members", "ARC members");
-    stack(3, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcPasOnly", "Total ARC members", "ARC members");
+    tstack(4, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcActive", "Total ARC members", "ARC members");
+    tstack(2, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcPublished", "Total ARC members", "ARC members");
+    tstack(3, totArc2D, totArcUS2D , totArcLPC2D, totArcnonLPC2D, "totArcPasOnly", "Total ARC members", "ARC members");
     
-    stack(4, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcActiveNew", "Total ARC members", "ARC members");
-    stack(2, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcPublishedNew", "Total ARC members", "ARC members");
-    stack(3, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcPasOnlyNew", "Total ARC members", "ARC members");
+    tstack(4, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcActiveNew", "Total ARC members", "ARC members");
+    tstack(2, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcPublishedNew", "Total ARC members", "ARC members");
+    tstack(3, totArc2D, totArcUS2D , totArcLPCnew2D, totArcnonLPCnew2D, "totArcPasOnlyNew", "Total ARC members", "ARC members");
     
-    stack(4, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMActiveNew", "Authors", "ARC members", true);
-    stack(2, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMPublishedNew", "Authors", "ARC members", true);
-    stack(3, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMPasOnlyNew", "Authors", "ARC members");
+    tstack(4, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMActiveNew", "Total ARC members", "ARC members", true);
+    tstack(2, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMPublishedNew", "Total ARC members", "ARC members", true);
+    tstack(3, totArcCM2D, totArcCMUS2D , totArcCMLPCnew2D, totArcCMnonLPCnew2D, "totArcCMPasOnlyNew", "Total ARC members", "ARC members");
     
     //   allSt->Draw();
     //   allSt->Draw();
@@ -1211,35 +1355,36 @@ void analyse()
         gStyle->SetOptTitle(0);
         
         nbrAuth[j]->GetXaxis()->SetTitle("Number of authors");
-        nbrAuth[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        nbrAuth[j]->GetYaxis()->SetTitleOffset(1.15) ;
         nbrAuth[j]->SetFillColor(38);
         nbrAuth[j]->Draw();
-    //         (at least the text->Draw(); statements.
-    //        TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
-    //        text1->SetNDC();
-    //        text1->SetTextAlign(13);
-    //        text1->SetX(0.17);
-    //        text1->SetY(0.989);
-    //        text1->SetTextFont(42);
-    //        text1->SetTextSizePixels(24);
-    //        text1->Draw();
+            //(at least the text->Draw(); statements.
+            TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
+            text1->SetNDC();
+            text1->SetTextAlign(13);
+            text1->SetX(0.13);
+            text1->SetY(0.95);
+            text1->SetTextFont(42);
+            text1->SetTextSizePixels(24);
+            text1->Draw();
         sprintf(hname, "authorsC%i.png", j);
         canv3->Print(hname);
         
+        // EAC
         usVsLpcFrac[j]->GetXaxis()->SetTitle("Authors from USA");
         std::cout << "usVsLpcFrac[j] "<<usVsLpcFrac[j]->GetEntries()<<endl;
         usVsLpcFrac[j]->GetYaxis()->SetTitle("USA authors from LPC-I");
-        usVsLpcFrac[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        usVsLpcFrac[j]->GetYaxis()->SetTitleOffset(1.5) ;
         usVsLpcFrac[j]->Draw("box");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcFracBoxC%i.png", j);
         canv3->Print(hname);
         
         usVsLPCnewFrac[j]->GetXaxis()->SetTitle("Authors from USA");
         usVsLPCnewFrac[j]->GetYaxis()->SetTitle("USA authors from LPC");
-        usVsLPCnewFrac[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        usVsLPCnewFrac[j]->GetYaxis()->SetTitleOffset(1.15) ;
         usVsLPCnewFrac[j]->Draw("box");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcNewFracBoxC%i.png", j);
         canv3->Print(hname);
         
@@ -1248,7 +1393,7 @@ void analyse()
         //     usVsLpcFrac[j]->GetXaxis()->SetTitleSize(0.045);
         //     usVsLpcFrac[j]->GetYaxis()->SetTitleSize(0.045);
         usVsLpcFrac[j]->Draw("text");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcFracTextC%i.png", j);
         canv3->Print(hname);
         
@@ -1258,7 +1403,7 @@ void analyse()
         //     usVsLPCnewFrac[j]->GetYaxis()->SetTitleSize(0.045);
         usVsLPCnewFrac[j]->SetMarkerSize(2.5);
         usVsLPCnewFrac[j]->Draw("text");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcNewFracTextC%i.png", j);
         std::cout << hname << " " << usVsLPCnewFrac[j]->GetEntries()<<endl;
         canv3->Print(hname);
@@ -1266,9 +1411,9 @@ void analyse()
         
         usVsLpcNbr[j]->GetXaxis()->SetTitle("Authors from USA");
         usVsLpcNbr[j]->GetYaxis()->SetTitle("USA authors from LPC-I");
-        usVsLpcNbr[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        usVsLpcNbr[j]->GetYaxis()->SetTitleOffset(1.15) ;
         usVsLpcNbr[j]->Draw("box");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcNbrBoxC%i.png", j);
         canv3->Print(hname);
         //     usVsLpcNbr[j]->GetXaxis()->SetTitleOffset(1.8) ;
@@ -1283,9 +1428,9 @@ void analyse()
         
         usVsLPCnewNbr[j]->GetXaxis()->SetTitle("Authors from USA");
         usVsLPCnewNbr[j]->GetYaxis()->SetTitle("USA authors from LPC");
-        usVsLPCnewNbr[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        usVsLPCnewNbr[j]->GetYaxis()->SetTitleOffset(1.15) ;
         usVsLPCnewNbr[j]->Draw("box");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcNbrNewBoxC%i.png", j);
         canv3->Print(hname);
         //     usVsLPCnewNbr[j]->GetXaxis()->SetTitleOffset(1.8) ;
@@ -1294,7 +1439,7 @@ void analyse()
         //     usVsLPCnewNbr[j]->GetYaxis()->SetTitleSize(0.045);
         usVsLPCnewNbr[j]->SetMarkerSize(2.5);
         usVsLPCnewNbr[j]->Draw("text");
-        //        text1->Draw();
+        text1->Draw();
         sprintf(hname, "usVsLpcNbrNewTextC%i.png", j);
         canv3->Print(hname);
         
@@ -1307,23 +1452,23 @@ void analyse()
     for (int j=0;j<4;++j) {
         canv2->cd(1);
         fracUS[j]->GetXaxis()->SetTitle("Fraction of authors from USA");
-        fracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracUS[j]->Draw();
         TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
         text1->SetNDC();
         text1->SetTextAlign(13);
-        text1->SetX(0.17);
-        text1->SetY(0.983);
+        text1->SetX(0.13);
+        text1->SetY(0.95);
         text1->SetTextFont(42);
         text1->SetTextSizePixels(24);
         //        text1->Draw(); // Orduna: get rid of the title
         canv2->cd(2);
         fracLPC[j]->GetXaxis()->SetTitle("Fraction of USA authors from LPC-I");
-        fracLPC[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracLPC[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracLPC[j]->Draw();
         canv2->cd(3);
         fracNonLPC[j]->GetXaxis()->SetTitle("Fraction of USA authors not from LPC-I");
-        fracNonLPC[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracNonLPC[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracNonLPC[j]->Draw();
         sprintf(hname, "authorFracC%i.png", j);
         canv2->Print(hname);
@@ -1331,16 +1476,16 @@ void analyse()
         
         canv2->cd(1);
         fracUS[j]->GetXaxis()->SetTitle("Fraction of authors from USA");
-        fracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracUS[j]->Draw();
         text1->Draw();
         canv2->cd(2);
         fracLPCnew[j]->GetXaxis()->SetTitle("Fraction of USA authors from LPC");
-        fracLPCnew[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracLPCnew[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracLPCnew[j]->Draw();
         canv2->cd(3);
         fracNonLPCnew[j]->GetXaxis()->SetTitle("Fraction of USA authors not from LPC");
-        fracNonLPCnew[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracNonLPCnew[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracNonLPCnew[j]->Draw();
         
         
@@ -1353,13 +1498,13 @@ void analyse()
     
     for (int j=0;j<4;++j) {
         fracUS[j]->GetXaxis()->SetTitle("Fraction of authors from USA");
-        fracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracUS[j]->Draw();
         TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
         text1->SetNDC();
         text1->SetTextAlign(13);
-        text1->SetX(0.17);
-        text1->SetY(0.983);
+        text1->SetX(0.13);
+        text1->SetY(0.95);
         text1->SetTextFont(42);
         text1->SetTextSizePixels(24);
         //        text1->Draw(); // Orduna: get rid of the title
@@ -1369,7 +1514,7 @@ void analyse()
         
         canv->cd(1);
         fracUS[j]->GetXaxis()->SetTitle("Fraction of authors from USA");
-        fracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        fracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         fracUS[j]->Draw();
         text1->Draw();
         
@@ -1381,42 +1526,42 @@ void analyse()
     for (int j=0;j<4;++j) {
         canv2->cd(1);
         arcFracUS[j]->GetXaxis()->SetTitle("Fraction of ARC from USA");
-        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracUS[j]->Draw();
         std::cout << "Average arc number "<< j<<" : "<<nbrARC[j]->GetMean()<<endl;
         std::cout << "Fraction of ARC from USA "<< j<<" : "<<arcFracUS[j]->GetMean()<<endl;
         TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
         text1->SetNDC();
         text1->SetTextAlign(13);
-        text1->SetX(0.17);
-        text1->SetY(0.983);
+        text1->SetX(0.13);
+        text1->SetY(0.95);
         text1->SetTextFont(42);
         text1->SetTextSizePixels(24);
         //        text1->Draw(); // Orduna: get rid of the title
         canv2->cd(2);
         arcFracLPC[j]->GetXaxis()->SetTitle("Fraction of USA ARC from LPC-I");
-        arcFracLPC[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracLPC[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracLPC[j]->Draw();
         canv2->cd(3);
         arcFracNonLPC[j]->GetXaxis()->SetTitle("Fraction of USA ARC not from LPC-I");
-        arcFracNonLPC[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracNonLPC[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracNonLPC[j]->Draw();
         sprintf(hname, "arcFracC%i.png", j);
         canv2->Print(hname);
         
         canv2->cd(1);
         arcFracUS[j]->GetXaxis()->SetTitle("Fraction of ARC from USA");
-        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracUS[j]->Draw();
         text1->Draw();
         canv2->cd(2);
         arcFracLPCnew[j]->GetXaxis()->SetTitle("Fraction of USA ARC from LPC");
-        arcFracLPCnew[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracLPCnew[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracLPCnew[j]->Draw();
         std::cout << "Fraction of USA ARC from LPC "<< j<<" : "<<arcFracLPCnew[j]->GetMean()<<endl;
         canv2->cd(3);
         arcFracNonLPCnew[j]->GetXaxis()->SetTitle("Fraction of USA ARC not from LPC");
-        arcFracNonLPCnew[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracNonLPCnew[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracNonLPCnew[j]->Draw();
         sprintf(hname, "arcFracNewC%i.png", j);
         canv2->Print(hname);
@@ -1426,13 +1571,13 @@ void analyse()
     
     for (int j=0;j<4;++j) {
         arcFracUS[j]->GetXaxis()->SetTitle("Fraction of ARC from USA");
-        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.1) ;
+        arcFracUS[j]->GetYaxis()->SetTitleOffset(1.15) ;
         arcFracUS[j]->Draw();
         TLatex* text1 = new TLatex(3.570061,23.08044,category[j]);
         text1->SetNDC();
         text1->SetTextAlign(13);
-        text1->SetX(0.17);
-        text1->SetY(0.983);
+        text1->SetX(0.13);
+        text1->SetY(0.95);
         text1->SetTextFont(42);
         text1->SetTextSizePixels(24);
         //        text1->Draw(); // Orduna: get rid of the title
@@ -1477,5 +1622,7 @@ void analyse()
     rootfile->Close();
     endTableHTML();
     theTableHTML.close();
+
+    categories3bin(PAGcounts40,PAGcounts50,PAGcounts80);
     
 }

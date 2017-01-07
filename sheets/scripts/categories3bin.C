@@ -17,76 +17,82 @@
 #include <TCanvas.h>
 #include "TROOT.h"
 
-
-// This is to be run in root:
-//   .L categories.C+
-//   categories()
-
-
 using namespace std;
 
-TCanvas* canv ;
-Int_t colors[] = {9, kPink+7, kOrange+8, kBlue+1, kGreen+2, kRed+1};
 
 void categories3bin()
 {
+    TCanvas* canv ;
+    Int_t colors[] = {9, kPink+7, kOrange+8, kBlue+1, kGreen+2, kRed+1};
+    
     canv = new TCanvas("canv", "canv", 800, 600);
     gStyle->SetOptStat(0);
     char hname[50];
     vector<TH1F*> cat;
     for (int i = 0; i < 4; ++i) {
         sprintf(hname, "cat%i", i);
-        cat.push_back(new TH1F(hname, hname, 6, 0, 6));
+        cat.push_back(new TH1F(hname, hname, 10, 0, 10));
     }
-    std::cout << "a\n";
     cat[0]->GetXaxis()->SetBinLabel(1, "B2G");
-    cat[0]->GetXaxis()->SetBinLabel(2, "EXO");
-    cat[0]->GetXaxis()->SetBinLabel(3, "HIG");
-    cat[0]->GetXaxis()->SetBinLabel(4, "SMP");
-    cat[0]->GetXaxis()->SetBinLabel(5, "SUS");
-    cat[0]->GetXaxis()->SetBinLabel(6, "TOP");
+    cat[0]->GetXaxis()->SetBinLabel(2, "BPH");
+    cat[0]->GetXaxis()->SetBinLabel(3, "EXO");
+    cat[0]->GetXaxis()->SetBinLabel(4, "FSQ");
+    cat[0]->GetXaxis()->SetBinLabel(5, "FTR");
+    cat[0]->GetXaxis()->SetBinLabel(6, "HIG");
+    cat[0]->GetXaxis()->SetBinLabel(7, "HIN");
+    cat[0]->GetXaxis()->SetBinLabel(8, "SMP");
+    cat[0]->GetXaxis()->SetBinLabel(9, "SUS");
+    cat[0]->GetXaxis()->SetBinLabel(10,"TOP");
     cat[0]->SetTitle("");
-    std::cout << "a\n";
     
     // >80%  LPC
-cat[0]->SetBinContent(1, 0);
-cat[0]->SetBinContent(2, 0);
-cat[0]->SetBinContent(3, 0);
-cat[0]->SetBinContent(4, 0);
-cat[0]->SetBinContent(5, 1);
-cat[0]->SetBinContent(6, 1);
-std::cout << 'd' << std::endl;
-// Majority LPC (defined as above 50%)
-cat[1]->SetBinContent(1, 0);
-cat[1]->SetBinContent(2, 0);
-cat[1]->SetBinContent(3, 0);
-cat[1]->SetBinContent(4, 0);
-cat[1]->SetBinContent(5, 1);
-cat[1]->SetBinContent(6, 2);
-std::cout << 's' << std::endl;
-// >40% LPC
-cat[2]->SetBinContent(1, 0);
-cat[2]->SetBinContent(2, 0);
-cat[2]->SetBinContent(3, 0);
-cat[2]->SetBinContent(4, 0);
-cat[2]->SetBinContent(5, 1);
-cat[2]->SetBinContent(6, 2);
-    std::cout << "c\n";
+    cat[0]->SetBinContent(1, 0);
+    cat[0]->SetBinContent(2, 0);
+    cat[0]->SetBinContent(3, 0);
+    cat[0]->SetBinContent(4, 0);
+    cat[0]->SetBinContent(5, 1);
+    cat[0]->SetBinContent(6, 1);
+    cat[0]->SetBinContent(7, 1);
+    cat[0]->SetBinContent(8, 1);
+    cat[0]->SetBinContent(9, 1);
+    cat[0]->SetBinContent(10, 1);
+    // Majority LPC (defined as above 50%)
+    cat[1]->SetBinContent(1, 0);
+    cat[1]->SetBinContent(2, 0);
+    cat[1]->SetBinContent(3, 0);
+    cat[1]->SetBinContent(4, 0);
+    cat[1]->SetBinContent(5, 1);
+    cat[1]->SetBinContent(6, 2);
+    cat[1]->SetBinContent(7, 2);
+    cat[1]->SetBinContent(8, 2);
+    cat[1]->SetBinContent(9, 2);
+    cat[1]->SetBinContent(10, 2);
+    // >40% LPC
+    cat[2]->SetBinContent(1, 0);
+    cat[2]->SetBinContent(2, 0);
+    cat[2]->SetBinContent(3, 0);
+    cat[2]->SetBinContent(4, 0);
+    cat[2]->SetBinContent(5, 1);
+    cat[2]->SetBinContent(6, 2);
+    cat[2]->SetBinContent(7, 2);
+    cat[2]->SetBinContent(8, 2);
+    cat[2]->SetBinContent(9, 2);
+    cat[2]->SetBinContent(10, 2);
+
     float max=0;
     for (int i=0;i<4;++i){
         cat[i]->SetBarOffset(0.15+0.25*i);
         cat[i]->SetBarWidth(0.2);
         cat[i]->SetFillColor(colors[i+1]);
     }
-    std::cout << "a\n";
+    
     cat[0]->SetMinimum(0);
     cat[0]->SetMaximum(45);
     cat[0]->GetYaxis()->SetTitle("Number of CADI entries");
     TH1 *h1 = cat[0]->DrawCopy("bar5");
     TH1 *h2 = cat[1]->DrawCopy("bar5,same");
     TH1 *h3 = cat[2]->DrawCopy("bar5,same");
-    canv->SaveAs("LPCmany3binNOlegend.png");
-    TLegend *legend = new TLegend(0.2,0.75,0.6,0.95);
+    TLegend *legend = new TLegend(0.15,0.75,0.55,0.89);
     legend->SetFillColor(10);
     legend->SetTextSize(0.03);
     legend->SetTextFont(42);
@@ -94,7 +100,7 @@ cat[2]->SetBinContent(6, 2);
     legend->SetFillStyle(0);
     legend->SetLineStyle(0);
     legend->AddEntry(h1,"Papers where 80\% US authors are from LPC","f");
-    legend->AddEntry(h2,"Majority of US authors and LPC authors","f");
+    legend->AddEntry(h2,"Papers where 50\% US authors are from LPC","f");
     legend->AddEntry(h3,"Papers where 40\% US authors are from LPC","f");
     legend->Draw();
     canv->SaveAs("LPCmany3bin.png");
