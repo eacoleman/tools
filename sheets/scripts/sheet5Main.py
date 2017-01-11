@@ -1,3 +1,5 @@
+from ROOT import TString
+
 '''
 Created on Sep 24, 2013
 
@@ -6,6 +8,44 @@ Created on Sep 24, 2013
 '''
 
 import json
+
+Scholars=["Claudio Campagnari"]
+Scholars+=["Robin Erbacher"]
+Scholars+=["Kenichi Hatakeyama"]
+Scholars+=["Christopher Hill"]
+Scholars+=["Ketino Kaadze"]
+Scholars+=["Luca Malgeri"]
+Scholars+=["Alexander Schmidt"]
+Scholars+=["Jamie Antonelli"]
+Scholars+=["Marco DeMattia"]
+Scholars+=["Ben Kreis"]
+Scholars+=["Edward Laird"]
+Scholars+=["Jacob Linacre"]
+Scholars+=["Ivan Marchesini"]
+Scholars+=["Dominick Olivito"]
+Scholars+=["Justin Pilot"]
+Scholars+=["Lovedeep Saini"]
+Scholars+=["Lesya Shchutska"]
+Scholars+=["Markus Stoye"]
+Scholars+=["John Stupak"]
+Scholars+=["Matthew Walker"]
+Scholars+=["Andrew Whitbeck"]
+Scholars+=["Si Xie"]
+Scholars+=["Cecilia Gerber"]
+Scholars+=["Greg Landsberg"]
+Scholars+=["Martijn Mulders"]
+Scholars+=["Salvatore Rappoccio"]
+Scholars+=["Roger Rusack"]
+Scholars+=["Artur Apresyan"]
+Scholars+=["Gabriele Benelli"]
+Scholars+=["Giuseppe Cerati"]
+Scholars+=["Souvik Das"]
+Scholars+=["Phillip Dudero"]
+Scholars+=["Daniel Duggan"]
+Scholars+=["Sadia Khalil"]
+Scholars+=["Hongxuan Liu"]
+Scholars+=["Maurizio Pierini"]
+Scholars+=["John Stupak"]
 
 LPC = ["BAYLOR-UNIV", "BOSTON-UNIV", "BROWN-UNIV", "CARNEGIE-MELLON", "CHICAGO", "COLORADO", "CORNELL", "FERMILAB", "FLORIDA-FIU", "FLORIDA-STATE", "FLORIDA-TECH", "IOWA", "KANSAS-STATE", "KANSAS-UNIV", "LIVERMORE", "MINNESOTA", "MISSISSIPPI", "NEBRASKA", "NOTRE_DAME", "PUERTO_RICO", "PURDUE", "PURDUE-CALUMET", "ROCKEFELLER", "RUTGERS", "SUNY-BUFFALO", "TENNESSEE", "TEXAS-TAMU", "TEXAS-TECH", "VIRGINIA-UNIV"]
 
@@ -72,6 +112,9 @@ authors_num_total = 0
 authors_num_from_USA_total = 0
 authors_num_from_LPC_total = 0
 authors_num_from_LPC_N_total = 0
+authors_num_lpc_fellows_total=0
+authors_num_chair_lpc_fellows_total=0
+authors_num_arc_lpc_fellows_total=0
 institutes_num_total = 0
 institutes_USA_num_total = 0
 institutes_LPC_num_total = 0
@@ -100,6 +143,9 @@ for analysis_code in analysis_codes:
     authors_num_from_USA = 0
     authors_num_from_LPC = 0
     authors_num_from_LPC_N = 0
+    authors_num_lpc_fellows=0
+    authors_num_chair_lpc_fellows=0
+    authors_num_arc_lpc_fellows=0
 
     analysis = analysies_json[analysis_code]
 
@@ -125,8 +171,23 @@ for analysis_code in analysis_codes:
         # arc_chair_from_LPC_N###
         if usa_lpc_authors.has_key(chairperson['fullname']) and usa_lpc_authors[chairperson['fullname']]:
             arc_chair_from_LPC_N = 1
+            try :
+                chairPersonName=chairperson['fullname']
+                print chairPersonName
+                authString=chairPersonName.__str__()
+                authString=authString.split(" ")
+                for sch in Scholars :
+                    schString=sch.split(" ")
+                    authInSch= authString==schString
+                    authInSch= authInSch or (authString[0] == schString[-1] and authString[-1]==schString[0])
+                    if authInSch :
+                        authors_num_chair_lpc_fellows+=1
+            except UnicodeEncodeError:
+                print "Hit a weird symbol! Moving on..."
+
         else:
             arc_chair_from_LPC_N = 0
+
 
     ### CADI contact
     cadi_contact = analysis["cadi_contact"]
@@ -156,7 +217,7 @@ for analysis_code in analysis_codes:
 
     arc_members = analysis["arc_members"]
 
-    for member_key in arc_members.keys():
+    for member_key in arc_members :
         member = arc_members[member_key]
 
         #    arc_members_num_from_USA = 0
@@ -168,6 +229,19 @@ for analysis_code in analysis_codes:
         # of ARC members from LPC NEW###
         if usa_lpc_authors.has_key(member_key) and usa_lpc_authors[member_key]:
             arc_members_num_from_LPC_N += 1
+            try :
+                arcMemName=member_key
+                authString=arcMemName.__str__()
+                authString=authString.split(" ")
+                for sch in Scholars :
+                    schString=sch.split(" ")
+                    authInSch= authString==schString
+                    authInSch= authInSch or (authString[0] == schString[-1] and authString[-1]==schString[0])
+                    if authInSch :
+                        #print "Hello!"
+                        authors_num_arc_lpc_fellows+=1
+            except UnicodeEncodeError:
+                print "Hit a weird symbol! Moving on..."
 
     ### AN Notes submitters
 
@@ -200,12 +274,26 @@ for analysis_code in analysis_codes:
 
             authors = note["authors"]
 
-            for author_key in authors.keys():       # author_key = FirstName LastName
+            for author_key in authors :       # author_key = FirstName LastName
                 author = authors[author_key]
 
                 #    institutes_num
                 if not institutes.has_key(author["institute"]):
                     institutes[author["institute"]] = author["country"]
+
+                try :
+                    authString=author_key.__str__()
+                    authString=authString.split(" ")
+                    for sch in Scholars :
+                        schString=sch.split(" ")
+                        authInSch= authString==schString
+                        authInSch= authInSch or (authString[0] == schString[-1] and authString[-1]==schString[0])
+                        if authInSch :
+                            #print "Hello!"
+                            authors_num_lpc_fellows+=1
+                except UnicodeEncodeError:
+                    print "Hit a weird symbol! Moving on..."
+
 
                 #    authors_num_from_USA
                 if author["country"] == "USA":
@@ -252,6 +340,9 @@ for analysis_code in analysis_codes:
     output_line.append(authors_num_from_USA.__str__())
     output_line.append(authors_num_from_LPC.__str__())
     output_line.append(authors_num_from_LPC_N.__str__())
+    output_line.append(authors_num_lpc_fellows.__str__())
+    output_line.append(authors_num_chair_lpc_fellows.__str__())
+    output_line.append(authors_num_arc_lpc_fellows.__str__())
     output_line.append(len(institutes).__str__())
     output_line.append(len(institutes_USA).__str__())
     output_line.append(len(institutes_LPC).__str__())
@@ -289,6 +380,9 @@ for analysis_code in analysis_codes:
     authors_num_from_USA_total += authors_num_from_USA
     authors_num_from_LPC_total += authors_num_from_LPC
     authors_num_from_LPC_N_total += authors_num_from_LPC_N
+    authors_num_lpc_fellows_total += authors_num_lpc_fellows
+    authors_num_chair_lpc_fellows_total += authors_num_chair_lpc_fellows
+    authors_num_arc_lpc_fellows_total += authors_num_arc_lpc_fellows
     institutes_num_total += len(institutes)
     institutes_USA_num_total += len(institutes_USA)
     institutes_LPC_num_total += len(institutes_LPC)
@@ -316,6 +410,9 @@ output_line.append(authors_num_total.__str__())
 output_line.append(authors_num_from_USA_total.__str__())
 output_line.append(authors_num_from_LPC_total.__str__())
 output_line.append(authors_num_from_LPC_N_total.__str__())
+output_line.append(authors_num_lpc_fellows_total.__str__())
+output_line.append(authors_num_chair_lpc_fellows_total.__str__())
+output_line.append(authors_num_arc_lpc_fellows_total.__str__())
 output_line.append(institutes_num_total.__str__())
 output_line.append(institutes_USA_num_total.__str__())
 output_line.append(institutes_LPC_num_total.__str__())
@@ -323,7 +420,7 @@ output_line.append(institutes_LPC_num_total_N.__str__())###
 
 total = " | ".join(output_line) + "\n"
 
-header = "Analysis code | Status | Samples | ARC chair from USA | ARC chair from LPC | ARC chair from LPC NEW | Cadi contact from US | Cadi contact LPC | Cadi contact LPC NEW | # of ARC members | # of ARC members form USA | # of ARC members from LPC | # of ARC members from LPC NEW | # of an submitters | # of submitters from USA | # of AN submitters from LPC | # of AN submitters from LPC NEW | # AN authors | # of AN authors from USA | # of  AN authors from LPC | # of  AN authors from LPC NEW | # of institutes | # in institutes from USA | # of institutes from LPC | # of institutes from LPC NEW\n"
+header = "Analysis code | Status | Samples | ARC chair from USA | ARC chair from LPC | ARC chair from LPC NEW | Cadi contact from US | Cadi contact LPC | Cadi contact LPC NEW | # of ARC members | # of ARC members form USA | # of ARC members from LPC | # of ARC members from LPC NEW | # of an submitters | # of submitters from USA | # of AN submitters from LPC | # of AN submitters from LPC NEW | # AN authors LPC fellows | ARC chairs LPC fellow | # ARC members LPC fellows | # AN authors | # of AN authors from USA | # of  AN authors from LPC | # of  AN authors from LPC NEW | # of institutes | # in institutes from USA | # of institutes from LPC | # of institutes from LPC NEW\n"
 
 f = open("sheets/sheet5.csv","w")
 f.write(header+output+header+total)

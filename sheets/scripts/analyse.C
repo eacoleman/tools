@@ -21,6 +21,7 @@ using namespace std;
 unsigned int theIndex = 1; // Orduna
 std::ofstream theTableHTML("table.html");
 
+
 TCanvas* canv ;
 static const char category[4][20] ={"Inactive", "Published", "PAS-Only PUB", "Active"};
 
@@ -99,9 +100,9 @@ void categories3bin(std::map<TString,int> map40,
     legend->SetBorderSize(0);
     legend->SetFillStyle(0);
     legend->SetLineStyle(0);
-    legend->AddEntry(h1,"Papers where 80\% US authors are from LPC","f");
-    legend->AddEntry(h2,"Papers where 50\% US authors are from LPC","f");
-    legend->AddEntry(h3,"Papers where 40\% US authors are from LPC","f");
+    legend->AddEntry(h1,"Papers where 60\% US authors; 60\% from LPC","f");
+    legend->AddEntry(h2,"Papers where 50\% US authors; 50\% from LPC","f");
+    legend->AddEntry(h3,"Papers where 40\% US authors; 40\% from LPC","f");
     legend->Draw();
     canv2->SaveAs("LPCmany3bin.png");
     canv2->SaveAs("LPCmany3bin.C");
@@ -198,6 +199,9 @@ public:
         anAuthUSA = row.integer(n++); 
         anAuthLPC = row.integer(n++);
         anAuthLPCnew = row.integer(n++);
+        anAuthLPCFel = row.integer(n++);
+        anAuthLPCFelChair = row.integer(n++);
+        anAuthLPCFelMembers = row.integer(n++);
         inst = row.integer(n++); 
         instUSA = row.integer(n++); 
         instLPC = row.integer(n++); 
@@ -247,6 +251,18 @@ public:
         return y == year();
     }
     
+    int LPCscholars() {
+        return anAuthLPCFel;
+    }
+
+    int LPCARCChairscholars() {
+        return anAuthLPCFelChair;
+    }
+
+    int LPCARCscholars() {
+        return anAuthLPCFelMembers;
+    }
+
     //   int cadiYear() {return
     
     /// are there any US authors
@@ -375,7 +391,7 @@ public:
     string code, status, samples;
     int arcChairUSA, arcChairLPC, cadiUSA, cadiLPC, arc, arcUSA, arcLPC,
     anSub, anSubUSA, anSubLPC, anAuth, anAuthUSA, anAuthLPC,
-    inst, instUSA, instLPC, anSubLPCnew, anAuthLPCnew;
+    inst, instUSA, instLPC, anSubLPCnew, anAuthLPCnew, anAuthLPCFel, anAuthLPCFelChair, anAuthLPCFelMembers;
     int arcChairLPCnew, cadiLPCnew, arcLPCnew, instLPCnew;
     
     
@@ -416,7 +432,7 @@ TH2F* prepareHisto2D(string a, const vector<string> & list = PAG)
     // all->SetNdivisions(26);
 }
 
-THStack* tstack(TH2* histo, string nameOfFile, bool print=false)
+THStack* tstack(TH2* histo, string nameOfFile, bool print=false, TString axis="CADI entries")
 {
     std::string name = "";
     histo->LabelsDeflate("X");
@@ -447,21 +463,22 @@ THStack* tstack(TH2* histo, string nameOfFile, bool print=false)
     }
 
     
-    TLegend * leg = new TLegend(0.6, 0.725, 0.88, 0.875, "","brNDC");
-    leg->SetFillColor(10);
-    leg->SetTextSize(0.03);
-    leg->SetTextFont(42);
-    leg->SetBorderSize(0);
-    leg->SetFillStyle(0);
-    leg->SetLineStyle(0);
-    leg->AddEntry(pub, "Published", "f");
-    leg->AddEntry(pas, "PAS-Only Pub", "f");
-    leg->AddEntry(act, "Active", "f");
+    ///TLegend * leg = new TLegend(0.6, 0.725, 0.88, 0.875, "","brNDC");
+    ///leg->SetFillColor(10);
+    ///leg->SetTextSize(0.03);
+    ///leg->SetTextFont(42);
+    ///leg->SetBorderSize(0);
+    ///leg->SetFillStyle(0);
+    ///leg->SetLineStyle(0);
+    //leg->AddEntry(pub, "Published", "f");
+    //leg->AddEntry(pas, "PAS-Only Pub", "f");
+    //leg->AddEntry(act, "Active", "f");
     mystack->Draw();
-    leg->Draw();
+    //leg->Draw();
     mystack->GetXaxis()->SetRangeUser(0,PAG.size());
-    mystack->GetYaxis()->SetTitle("Number of CADI entries");
-    mystack->GetYaxis()->SetTitleOffset(1.15) ;
+    title = TString("Number of ")+axis;
+    mystack->GetYaxis()->SetTitle(title);
+    mystack->GetYaxis()->SetTitleOffset(1.3) ;
     canv->SaveAs((nameOfFile+".png").c_str());
     canv->SaveAs((nameOfFile+".C").c_str());
     return mystack;
@@ -772,17 +789,17 @@ void analyse()
     
     PAG=std::vector<string>(0);
     PAG.push_back("B2G"); // CERN plots: b2gs = [ B2G ]
-    PAG.push_back("BPH"); // CERN plots: bphs = [ BPH ]
+    //PAG.push_back("BPH"); // CERN plots: bphs = [ BPH ]
     //   PAG.push_back("DIF");
     //   PAG.push_back("EWK");
     PAG.push_back("EXO"); // CERN plots: exos = [ EXO ]
-    PAG.push_back("FSQ"); // CERN plots: fwds = [ FWD, FSQ, GEN ]
-    PAG.push_back("FTR");
+    //PAG.push_back("FSQ"); // CERN plots: fwds = [ FWD, FSQ, GEN ]
+    //PAG.push_back("FTR");
     //   PAG.push_back("FWD");
     PAG.push_back("HIG"); // CERN plots: higs = [ HIG ]
-    PAG.push_back("HIN"); // CERN plots: hins = [ HIN ]
-    //   PAG.push_back("QCD");
-    PAG.push_back("SMP"); // CERN plots: smps = [ SMP, QCD, EWK ]
+    //PAG.push_back("HIN"); // CERN plots: hins = [ HIN ]
+      // PAG.push_back("QCD");
+    //PAG.push_back("SMP"); // CERN plots: smps = [ SMP, QCD, EWK ]
     PAG.push_back("SUS"); // CERN plots: suss = [ SUS ]
     PAG.push_back("TOP"); // CERN plots: tops = [ TOP ]
     
@@ -848,6 +865,11 @@ void analyse()
     TH2F* withUS_nonLPCauthors2D = prepareHisto2D("withUS_nonLPCauthors2D");
     TH2F* withUS_LPCnewauthors2D = prepareHisto2D("withUS_LPCnewauthors2D");
     TH2F* withUS_nonLPCnewauthors2D = prepareHisto2D("withUS_nonLPCnewauthors2D");
+    TH2F* withUS_LPCScholars2D = prepareHisto2D("LPCscholars");
+    TH2F* withUS_LPCNumScholars2D = prepareHisto2D("nLPCscholars");
+    TH2F* withUS_LPCARCChairScholars2D = prepareHisto2D("LPCARCChairscholars");
+    TH2F* withUS_LPCARCScholars2D = prepareHisto2D("nLPCARCscholars");
+    TH2F* withUS_LPCNumARCScholars2D = prepareHisto2D("nLPCARCscholars");
     
     TH2F* majUSauthors2D = prepareHisto2D("majUSauthors2D");
     TH2F* majUS_LPCauthors2D = prepareHisto2D("majUS_LPCauthors2D");
@@ -988,8 +1010,9 @@ void analyse()
         // if (entries[j].year() < 15) continue ;
         
         // Select run
-        if (entries[j].getsamples() == "Run1") continue;
+        //if (entries[j].getsamples() == "Run1") continue;
         //if (entries[j].getsamples() == "Run2") continue;
+        if(entries[j].year() < 15) continue;
         
         // Select only PAGs
         if (find(PAG.begin(),PAG.end(),entries[j].category().c_str())==PAG.end()) continue;
@@ -1050,6 +1073,17 @@ void analyse()
                 if (entries[j].isUS_nonLPC()) withUS_nonLPCauthors2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
                 if (entries[j].isUS_LPCnew()) withUS_LPCnewauthors2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
                 if (entries[j].isUS_nonLPCnew()) withUS_nonLPCnewauthors2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
+                if (entries[j].LPCscholars() > 0 && (entries[j].activity() == 2 || entries[j].activity() == 1)) {
+                    withUS_LPCNumScholars2D->Fill(entries[j].category().c_str(), 1, entries[j].LPCscholars());
+                    withUS_LPCScholars2D->Fill(entries[j].category().c_str(), 1, 1);
+                }
+                if (entries[j].LPCARCscholars() > 0 && (entries[j].activity() == 2 || entries[j].activity() == 1)) {
+                    withUS_LPCNumARCScholars2D->Fill(entries[j].category().c_str(), 1, entries[j].LPCARCscholars());
+                    withUS_LPCARCScholars2D->Fill(entries[j].category().c_str(), 1, 1);
+                }
+                if (entries[j].LPCARCChairscholars() > 0 && (entries[j].activity() == 2 || entries[j].activity() == 1)) {
+                    withUS_LPCARCChairScholars2D->Fill(entries[j].category().c_str(), 1, 1);
+                }
                 if (entries[j].majorityUS()) {majUSauthors2D->Fill(entries[j].category().c_str(), entries[j].activity(), 1.0);
                     // 	if (entries[j].category()=="FTR") std::cout << "Found : "<<entries[j].code<< " "<<entries[j].activity() << "	"<<majUSauthors2D->GetBinContent(7,3)<<endl;
                 }
@@ -1115,9 +1149,9 @@ void analyse()
                     }
                 }
 
-                if(theRatio>0.4 && theOtherRatio>0.4) PAGcounts40[entries[j].category().c_str()]+=1;
-                if(theRatio>0.5 && theOtherRatio>0.5) PAGcounts50[entries[j].category().c_str()]+=1;
-                if(theRatio>0.8 && theOtherRatio>0.8) PAGcounts80[entries[j].category().c_str()]+=1;
+                if(theRatio>=0.4 && theOtherRatio>=0.4) PAGcounts40[entries[j].category().c_str()]+=1;
+                if(theRatio>=0.5 && theOtherRatio>=0.5) PAGcounts50[entries[j].category().c_str()]+=1;
+                if(theRatio>=0.6 && theOtherRatio>=0.6) PAGcounts80[entries[j].category().c_str()]+=1;
             }
             
             //            if (entries[j].anAuth > 0 && (((float)entries[j].anAuthLPCnew/entries[j].anAuthUSA) > 0.4) && entries[j].activity() == 1) {++count40;}
@@ -1278,6 +1312,12 @@ void analyse()
     
     //   active2D
     //   THStack* allSt = stack(active2D, "allStack");
+    
+    tstack(withUS_LPCScholars2D, "LPCscholars", true);
+    tstack(withUS_LPCNumScholars2D, "nLPCscholars", true, "LPC Fellows as authors");
+    tstack(withUS_LPCARCChairScholars2D, "LPCChairscholars", true, "LPC Fellows as ARC chairs");
+    tstack(withUS_LPCARCScholars2D, "LPCARCscholars", true, "CADI entries");
+    tstack(withUS_LPCNumARCScholars2D, "nLPCARCscholars", true, "LPC Fellows as ARC members");
     
     tstack(activeMany2D, "CADIentriesMany", true);
     tstack(active2D, "CADIentries");
